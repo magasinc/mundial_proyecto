@@ -43,6 +43,7 @@ const groupPairings = [[0, 1], [2, 3], [0, 2], [3, 1], [3, 0], [1, 2]];
 const scores = {};
 const picks = {};
 const teamMap = new Map();
+let activeGroupId = groups[0].id;
 
 groups.forEach(group => {
   group.teams.forEach(([name, flag]) => teamMap.set(name, { name, flag, group: group.id }));
@@ -91,8 +92,16 @@ function renderGroups() {
   `).join("");
 }
 
+function renderGroupSwitcher() {
+  document.querySelector("#group-switcher").innerHTML = groups.map(group => `
+    <button class="group-tab ${group.id === activeGroupId ? "is-active" : ""}" type="button" data-group="${group.id}">
+      Grupo ${group.id}
+    </button>
+  `).join("");
+}
+
 function renderMatches() {
-  document.querySelector("#matches-grid").innerHTML = matches.map(match => {
+  document.querySelector("#matches-grid").innerHTML = matches.filter(match => match.group === activeGroupId).map(match => {
     const home = getTeam(match.home);
     const away = getTeam(match.away);
     const current = scores[match.id] || {};
@@ -109,6 +118,7 @@ function renderMatches() {
       </article>
     `;
   }).join("");
+  renderActiveGroupTable();
 }
 
 function emptyStats(team, group) {
@@ -176,7 +186,21 @@ function renderTables() {
   `).join("");
 
   document.querySelector("#thirds-table").innerHTML = renderTable(bestThirds, bestThirdNames, true);
+  renderActiveGroupTable(tables, bestThirdNames);
   updateStatus(tables);
+}
+
+function renderActiveGroupTable(currentTables, currentBestThirdNames) {
+  const tableContainer = document.querySelector("#active-group-table");
+  if (!tableContainer) return;
+
+  const tables = currentTables || calculateTables();
+  const bestThirdNames = currentBestThirdNames || new Set(getBestThirds(tables).slice(0, 8).map(row => row.team));
+
+  tableContainer.innerHTML = `
+    <div class="table-head"><strong>Grupo ${activeGroupId}</strong><span>En vivo</span></div>
+    ${renderTable(tables[activeGroupId], bestThirdNames)}
+  `;
 }
 
 function renderTable(rows, bestThirdNames, isThirds = false) {
@@ -193,7 +217,7 @@ function renderTable(rows, bestThirdNames, isThirds = false) {
           const className = !isThirds && index < 2 ? "qualified" : bestThirdNames.has(row.team) ? "third-qualified" : "";
           return `
             <tr class="${className}">
-              <td><span class="team-cell"><span class="flag">${team.flag}</span>${row.team}</span></td>
+              <td><span class="team-cell"><span class="flag">${team.flag}</span><span class="team-name">${row.team}</span></span></td>
               <td>${row.pts}</td><td>${row.pj}</td><td>${row.gf}</td><td>${row.gc}</td><td>${row.dg}</td>
             </tr>
           `;
@@ -215,36 +239,94 @@ function getQualifiers(tables) {
   });
 
   const thirds = getBestThirds(tables).slice(0, 8);
-  const used = new Set();
+  const thirdSlots = roundOf32.flatMap(([, , slot]) => slot.startsWith("3:") ? [slot] : []);
+  const thirdAssignments = assignThirdPlaceSlots(thirdSlots, thirds);
 
-  roundOf32.forEach(([, , slot]) => {
-    if (!slot.startsWith("3:")) return;
-    const allowedGroups = slot.replace("3:", "").split("/");
-    const selected = thirds.find(row => allowedGroups.includes(row.group) && !used.has(row.group));
-    if (selected) {
-      qualifiers[slot] = selected;
-      used.add(selected.group);
-    }
+  Object.entries(thirdAssignments).forEach(([slot, team]) => {
+    qualifiers[slot] = team;
   });
 
   return qualifiers;
+}
+
+function assignThirdPlaceSlots(slots, thirds) {
+  const choicesBySlot = slots.map(slot => ({
+    slot,
+    allowedGroups: slot.replace("3:", "").split("/")
+  }));
+  const orderedSlots = [...choicesBySlot].sort((a, b) => {
+    const aChoices = thirds.filter(row => a.allowedGroups.includes(row.group)).length;
+    const bChoices = thirds.filter(row => b.allowedGroups.includes(row.group)).length;
+    return aChoices - bChoices;
+  });
+  const assignments = {};
+  const usedGroups = new Set();
+
+  function assign(index) {
+    if (index === orderedSlots.length) return true;
+
+    const current = orderedSlots[index];
+    const candidates = thirds.filter(row => current.allowedGroups.includes(row.group) && !usedGroups.has(row.group));
+
+    for (const candidate of candidates) {
+      assignments[current.slot] = candidate;
+      usedGroups.add(candidate.group);
+
+      if (assign(index + 1)) return true;
+
+      usedGroups.delete(candidate.group);
+      delete assignments[current.slot];
+    }
+
+    return false;
+  }
+
+  assign(0);
+  return assignments;
 }
 
 function renderBracket() {
   const tables = calculateTables();
   const complete = matches.every(match => isCompleteResult(scores[match.id]));
   const qualifiers = complete ? getQualifiers(tables) : {};
-  const rounds = [
+  const bracketRounds = [
     { title: "Dieciseisavos", matches: roundOf32 },
     ...laterRounds
   ];
+  const leftRounds = [
+    { title: "Dieciseisavos", matches: bracketRounds[0].matches.slice(0, 8) },
+    { title: "Octavos", matches: bracketRounds[1].matches.slice(0, 4) },
+    { title: "Cuartos", matches: bracketRounds[2].matches.slice(0, 2) },
+    { title: "Semifinal", matches: bracketRounds[3].matches.slice(0, 1) }
+  ];
+  const rightRounds = [
+    { title: "Semifinal", matches: bracketRounds[3].matches.slice(1, 2) },
+    { title: "Cuartos", matches: bracketRounds[2].matches.slice(2, 4) },
+    { title: "Octavos", matches: bracketRounds[1].matches.slice(4, 8) },
+    { title: "Dieciseisavos", matches: bracketRounds[0].matches.slice(8, 16) }
+  ];
+  const finalRound = { title: "Final", matches: bracketRounds[4].matches };
 
-  document.querySelector("#bracket").innerHTML = rounds.map(round => `
+  document.querySelector("#bracket").innerHTML = `
+    <div class="bracket-side bracket-side-left">
+      ${leftRounds.map(round => renderBracketRound(round, qualifiers, complete)).join("")}
+    </div>
+    <div class="bracket-final">
+      ${renderBracketRound(finalRound, qualifiers, complete)}
+    </div>
+    <div class="bracket-side bracket-side-right">
+      ${rightRounds.map(round => renderBracketRound(round, qualifiers, complete)).join("")}
+    </div>
+  `;
+}
+
+function renderBracketRound(round, qualifiers, complete) {
+  return `
     <section class="bracket-round">
       <h3>${round.title}</h3>
       ${round.matches.map(([id, a, b]) => renderBracketMatch(id, resolveSlot(a, qualifiers), resolveSlot(b, qualifiers), complete)).join("")}
     </section>
-  `).join("");
+  `;
 }
 
 function resolveSlot(slot, qualifiers) {
@@ -342,6 +424,23 @@ document.addEventListener("input", event => {
 });
 
 document.addEventListener("click", event => {
+  if (event.target.closest(".brand")) {
+    showHome();
+    return;
+  }
+
+  const viewLink = event.target.closest(".view-link");
+  if (viewLink) {
+    showView(viewLink.dataset.view);
+  }
+
+  const groupButton = event.target.closest("[data-group]");
+  if (groupButton) {
+    activeGroupId = groupButton.dataset.group;
+    renderGroupSwitcher();
+    renderMatches();
+  }
+
   if (event.target.matches(".tab")) {
     document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("is-active"));
     document.querySelectorAll(".tab-panel").forEach(panel => panel.classList.remove("is-active"));
@@ -355,6 +454,34 @@ document.addEventListener("click", event => {
     renderBracket();
   }
 });
+
+function showView(viewId) {
+  if (!viewId) return;
+
+  document.querySelector(".hero").classList.add("is-hidden");
+  document.querySelectorAll(".app-view").forEach(section => {
+    section.classList.toggle("is-active", section.id === viewId);
+  });
+  document.querySelectorAll(".view-link").forEach(link => {
+    link.classList.toggle("is-active", link.dataset.view === viewId);
+  });
+}
+
+function initView() {
+  const initialView = window.location.hash.replace("#", "");
+  if (["grupos", "simulador", "calendario"].includes(initialView)) {
+    showView(initialView);
+    return;
+  }
+
+  showHome();
+}
+
+function showHome() {
+  document.querySelector(".hero").classList.remove("is-hidden");
+  document.querySelectorAll(".app-view").forEach(section => section.classList.remove("is-active"));
+  document.querySelectorAll(".view-link").forEach(link => link.classList.remove("is-active"));
+}
 
 document.querySelector("#random-fill").addEventListener("click", () => {
   matches.forEach(match => {
@@ -376,7 +503,9 @@ document.querySelector("#reset-sim").addEventListener("click", () => {
 });
 
 renderGroups();
+renderGroupSwitcher();
 renderMatches();
 renderTables();
 renderBracket();
 renderCalendar();
+initView();

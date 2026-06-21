@@ -13,9 +13,9 @@
     <nav class="nav" aria-label="Menu principal">
       <a class="brand" href="#inicio"><span class="brand-ball">26</span>Mundial 2026</a>
       <div class="menu">
-        <a href="#grupos">Grupos</a>
-        <a href="#simulador">Simulador</a>
-        <a href="#calendario">Calendario</a>
+        <a class="view-link" href="#grupos" data-view="grupos">Grupos</a>
+        <a class="view-link" href="#simulador" data-view="simulador">Simulador</a>
+        <a class="view-link" href="#calendario" data-view="calendario">Calendario</a>
       </div>
     </nav>
   </header>
@@ -30,8 +30,8 @@
             Ingresa tus resultados, mira cómo cambian las tablas y elige ganadores en los cruces eliminatorios.
           </p>
           <div class="hero-actions">
-            <a class="button button-primary" href="#simulador">Empezar simulación</a>
-            <a class="button button-ghost" href="#grupos">Ver grupos</a>
+            <a class="button button-primary view-link" href="#simulador" data-view="simulador">Empezar simulación</a>
+            <a class="button button-ghost view-link" href="#grupos" data-view="grupos">Ver grupos</a>
           </div>
         </div>
         <div class="hero-panel">
@@ -45,18 +45,18 @@
       </div>
     </section>
 
-    <section id="grupos" class="section">
+    <section id="grupos" class="section app-view">
       <div class="wrap">
         <div class="section-title">
           <span>Fase de grupos</span>
           <h2>Todos los grupos</h2>
-          <p>Las banderas aparecen junto a cada selección. Estos mismos equipos alimentan el simulador.</p>
+          
         </div>
         <div id="groups-grid" class="groups-grid"></div>
       </div>
     </section>
 
-    <section id="simulador" class="section section-dark">
+    <section id="simulador" class="section section-dark app-view">
       <div class="wrap">
         <div class="section-title">
           <span>Predicciones</span>
@@ -80,7 +80,13 @@
             </div>
 
             <div id="tab-matches" class="tab-panel is-active">
-              <div id="matches-grid" class="matches-grid"></div>
+              <div id="group-switcher" class="group-switcher" aria-label="Cambiar grupo"></div>
+              <div class="group-sim-grid">
+                <div id="matches-grid" class="matches-grid"></div>
+                <aside class="active-table-card">
+                  <div id="active-group-table"></div>
+                </aside>
+              </div>
             </div>
 
             <div id="tab-tables" class="tab-panel">
@@ -99,12 +105,12 @@
       </div>
     </section>
 
-    <section id="calendario" class="section">
+    <section id="calendario" class="section app-view">
       <div class="wrap">
         <div class="section-title">
           <span>Fixture</span>
           <h2>Calendario por fecha</h2>
-          <p>No puedo ver la imagen adjunta en este chat, así que lo dejé como calendario visual por día: fecha, grupos y partidos ordenados.</p>
+          
         </div>
         <div id="calendar" class="calendar"></div>
       </div>
@@ -112,7 +118,7 @@
   </main>
 
   <footer class="footer">
-    <div class="wrap">Landing del Mundial 2026 | Grupos, simulador y calendario.</div>
+    <div class="wrap">Mundial 2026 | Grupos, simulador y calendario.</div>
   </footer>
 
   <script src="script.js"></script>

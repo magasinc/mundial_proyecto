@@ -100,6 +100,11 @@ input {
   color: #fff;
 }
 
+.menu a.is-active {
+  background: var(--gold);
+  color: var(--ink);
+}
+
 .hero {
   color: #fff;
   min-height: 610px;
@@ -211,6 +216,15 @@ h3 {
 
 .section {
   padding: 72px 0;
+}
+
+.hero.is-hidden,
+.app-view {
+  display: none;
+}
+
+.app-view.is-active {
+  display: block;
 }
 
 .section-dark {
@@ -364,9 +378,39 @@ h3 {
   display: block;
 }
 
+.group-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.group-tab {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  min-height: 40px;
+  padding: 8px 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.group-tab.is-active {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+.group-sim-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.72fr);
+  gap: 16px;
+  align-items: start;
+}
+
 .matches-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 14px;
 }
 
@@ -443,6 +487,27 @@ td:first-child {
 
 .table-card {
   box-shadow: none;
+  color: var(--ink);
+}
+
+.table-card table,
+.thirds-card table,
+.active-table-card table {
+  background: #fff;
+  color: var(--ink);
+}
+
+.active-table-card {
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.thirds-card {
+  color: var(--ink);
 }
 
 .team-cell {
@@ -452,12 +517,20 @@ td:first-child {
   font-weight: 900;
 }
 
+.team-name {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
 .qualified {
-  background: #eefaf4;
+  background: #dff7eb;
+  color: #0f3927;
 }
 
 .third-qualified {
-  background: #fff8df;
+  background: #fff1b8;
+  color: #3b2c00;
 }
 
 .thirds-card {
@@ -468,14 +541,26 @@ td:first-child {
 
 .bracket {
   display: grid;
-  grid-template-columns: repeat(5, minmax(240px, 1fr));
-  gap: 14px;
+  grid-template-columns: max-content minmax(220px, 260px) max-content;
+  gap: 18px;
+  align-items: center;
   overflow-x: auto;
-  padding-bottom: 8px;
+  padding: 4px 0 10px;
+}
+
+.bracket-side {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(185px, 215px));
+  gap: 12px;
+  align-items: center;
+}
+
+.bracket-final {
+  align-self: center;
 }
 
 .bracket-round {
-  min-width: 240px;
+  min-width: 0;
   padding: 14px;
   background: var(--night-2);
   border-color: rgba(255, 255, 255, 0.12);
@@ -491,7 +576,7 @@ td:first-child {
   display: grid;
   gap: 8px;
   padding: 10px;
-  margin-top: 10px;
+  margin-top: 12px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.07);
 }
@@ -583,9 +668,9 @@ td:first-child {
     position: static;
   }
 
+  .group-sim-grid,
   .groups-grid,
   .tables-grid,
-  .matches-grid,
   .calendar-games {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -598,9 +683,9 @@ td:first-child {
     padding: 14px 0;
   }
 
+  .group-sim-grid,
   .groups-grid,
   .tables-grid,
-  .matches-grid,
   .calendar-games,
   .calendar-day {
     grid-template-columns: 1fr;
