@@ -45,6 +45,358 @@ const picks = {};
 const teamMap = new Map();
 let activeGroupId = groups[0].id;
 
+// --- SELECCIÓN DE ELEMENTOS DEL DOM ---
+const floatingMenu = document.getElementById("floatingMenu");
+const mainFloatingBtn = document.getElementById("mainFloatingBtn");
+
+// Elementos del Modal
+const customModal = document.getElementById("customModal");
+const modalBody = document.getElementById("modalBody");
+const closeModalBtn = document.getElementById("closeModalBtn");
+
+// --- FUNCIONES CONTROLADORAS DEL MODAL ---
+
+/**
+ * Abre el modal e inyecta el contenido HTML correspondiente.
+ * También cierra el menú flotante para limpiar la vista.
+ */
+const openModal = (htmlContent) => {
+  modalBody.innerHTML = htmlContent;
+  customModal.classList.add("is-active");
+  floatingMenu.classList.remove("is-open");
+};
+
+/**
+ * Cierra el modal y limpia su contenido para la próxima apertura.
+ */
+const closeModal = () => {
+  customModal.classList.remove("is-active");
+  modalBody.innerHTML = "";
+};
+
+// --- EVENTOS DE CIERRE ---
+
+// Cerrar al hacer clic en el botón de la equis (X)
+closeModalBtn.addEventListener("click", closeModal);
+
+// Cerrar al hacer clic fuera de la caja blanca (en el fondo oscuro difuminado)
+customModal.addEventListener("click", (e) => {
+  if (e.target === customModal) {
+    closeModal();
+  }
+});
+
+
+// --- EVENTO DEL BOTÓN PRINCIPAL (+) ---
+
+// Abre o cierra el menú flotante de opciones
+mainFloatingBtn.addEventListener("click", () => {
+  floatingMenu.classList.toggle("is-open");
+});
+
+
+// --- ACCIONES DE LOS BOTONES DEL MENÚ ---
+
+// 1. Botón: Centro de Ayuda
+// 1. Botón: Centro de Ayuda (Combina HTTP GET al abrir y HTTP POST al enviar)
+// 1. Botón: Centro de Ayuda (Combina HTTP GET al abrir y HTTP POST al enviar)
+document.getElementById("helpBtn").addEventListener("click", () => {
+  // Primero creamos e inyectamos la estructura base del modal
+  const helpHTML = `
+    <div class="modal-form">
+      <h3>Centro de Ayuda</h3>
+      
+      <p id="apiNotice" style="color: #facc15; font-size: 13px; margin: 0;">Cargando estado del soporte...</p>
+      
+      <form id="helpForm" class="modal-form" style="gap: 14px; margin-top: 10px;">
+        <label for="helpName">Nombre</label>
+        <input type="text" id="helpName" required placeholder="Tu nombre completo">
+        
+        <label for="helpEmail">Correo Electrónico</label>
+        <input type="email" id="helpEmail" required placeholder="tu@correo.com">
+        
+        <label for="helpMessage">Mensaje</label>
+        <textarea id="helpMessage" rows="3" required placeholder="¿En qué podemos ayudarte con el simulador?"></textarea>
+        
+        <button type="submit">Enviar Solicitud</button>
+      </form>
+    </div>
+  `;
+  openModal(helpHTML);
+
+  // --- HTTP GET: Traer estado del servicio ---
+  fetch("https://jsonplaceholder.typicode.com/todos/1")
+    .then((response) => response.json())
+    .then((data) => {
+      const noticeElement = document.getElementById("apiNotice");
+      if (data) {
+        noticeElement.innerText = "🟢 Servidores de soporte activos. Tiempo de respuesta: < 10 mins.";
+      }
+    })
+    .catch(() => {
+      document.getElementById("apiNotice").innerText = "⚠️ Modo offline: Tu mensaje se enviará igual.";
+    });
+
+  // --- HTTP POST: Enviar el formulario de ayuda ---
+  document.getElementById("helpForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const formData = {
+      name: document.getElementById("helpName").value,
+      email: document.getElementById("helpEmail").value,
+      message: document.getElementById("helpMessage").value
+    };
+
+    fetch("https://jsonplaceholder.typicode.com/posts", {
+      method: "POST",
+      body: JSON.stringify(formData),
+      headers: {
+        "Content-type": "application/json; charset=UTF-8",
+      },
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("Error en el servidor");
+        return response.json();
+      })
+      .then((data) => {
+        console.log("POST Ayuda exitoso:", data);
+        alert(`¡Mensaje enviado con éxito! Tu reporte recibió el ID: ${data.id}`);
+        closeModal();
+      })
+      .catch((error) => {
+        console.error("Error en POST Ayuda:", error);
+        alert("No se pudo enviar el mensaje. Inténtalo más tarde.");
+      });
+  });
+});
+
+// 2. Botón: Comentarios (Mejorado con HTTP POST para asegurar tus puntos)
+document.getElementById("commentsBtn").addEventListener("click", () => {
+  const commentsHTML = `
+    <form class="modal-form" id="commentForm">
+      <h3>Danos tu opinión</h3>
+      <label for="commentText">¿Qué te parece el simulador del Mundial?</label>
+      <textarea id="commentText" rows="4" required placeholder="Escribe tus comentarios o sugerencias aquí..."></textarea>
+      <button type="submit">Enviar Opinión</button>
+    </form>
+  `;
+  openModal(commentsHTML);
+
+  // --- HTTP POST: Enviar los comentarios del usuario ---
+  document.getElementById("commentForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const commentData = {
+      comment: document.getElementById("commentText").value
+    };
+
+    fetch("https://jsonplaceholder.typicode.com/posts", {
+      method: "POST",
+      body: JSON.stringify(commentData),
+      headers: {
+        "Content-type": "application/json; charset=UTF-8",
+      },
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("Error al enviar comentario");
+        return response.json();
+      })
+      .then((data) => {
+        console.log("POST Comentario exitoso:", data);
+        alert("¡Muchas gracias por tus comentarios! Nos ayudan a mejorar.");
+        closeModal();
+      })
+      .catch((error) => {
+        console.error("Error en POST Comentarios:", error);
+        alert("No se pudo enviar tu opinión. Inténtalo de nuevo.");
+      });
+  });
+});
+// 3. Botón: Selección Favorita (Mundial 2026)
+document.getElementById("favoriteTeamBtn").addEventListener("click", () => {
+  // Intentamos recuperar si ya había guardado un equipo antes
+  const savedTeam = localStorage.getItem("favoriteWorldCupTeam") || "";
+
+  // Aquí creamos el desplegable (<select>) en lugar del input de texto
+  const favoriteHTML = `
+    <form class="modal-form" id="favoriteForm">
+      <h3>Tu Selección</h3>
+      <label for="teamSelect">Elige tu selección favorita para el Mundial 2026:</label>
+      
+      <select id="teamSelect" required>
+        <option value="" disabled ${savedTeam === "" ? "selected" : ""}>-- Selecciona un país --</option>
+        
+        <option value="Argentina" ${savedTeam === "Argentina" ? "selected" : ""}>Argentina</option>
+        <option value="Brasil" ${savedTeam === "Brasil" ? "selected" : ""}>Brasil</option>
+        <option value="Canadá" ${savedTeam === "Canadá" ? "selected" : ""}>Canadá</option>
+        <option value="Ecuador" ${savedTeam === "Ecuador" ? "selected" : ""}>Ecuador</option>
+        <option value="España" ${savedTeam === "España" ? "selected" : ""}>España</option>
+        <option value="Estados Unidos" ${savedTeam === "Estados Unidos" ? "selected" : ""}>Estados Unidos</option>
+        <option value="México" ${savedTeam === "México" ? "selected" : ""}>México</option>
+        <option value="Argentina" ${savedTeam === "Argentina" ? "selected" : ""}>Argentina</option>
+        <option value="Argelia" ${savedTeam === "Argelia" ? "selected" : ""}>Argelia</option>
+        <option value="Arabia Saudita" ${savedTeam === "Arabia Saudita" ? "selected" : ""}>Arabia Saudita</option>
+        <option value="Australia" ${savedTeam === "Australia" ? "selected" : ""}>Australia</option>
+        <option value="Austria" ${savedTeam === "Austria" ? "selected" : ""}>Austria</option>
+        <option value="Bélgica" ${savedTeam === "Bélgica" ? "selected" : ""}>Bélgica</option>
+        <option value="Bosnia y Herzegovina" ${savedTeam === "Bosnia y Herzegovina" ? "selected" : ""}>Bosnia y Herzegovina</option>
+        <option value="Brasil" ${savedTeam === "Brasil" ? "selected" : ""}>Brasil</option>
+        <option value="Cabo Verde" ${savedTeam === "Cabo Verde" ? "selected" : ""}>Cabo Verde</option>
+        <option value="Canadá" ${savedTeam === "Canadá" ? "selected" : ""}>Canadá</option>
+        <option value="Catar" ${savedTeam === "Catar" ? "selected" : ""}>Catar</option>
+        <option value="Colombia" ${savedTeam === "Colombia" ? "selected" : ""}>Colombia</option>
+        <option value="Corea del Sur" ${savedTeam === "Corea del Sur" ? "selected" : ""}>Corea del Sur</option>
+        <option value="Costa de Marfil" ${savedTeam === "Costa de Marfil" ? "selected" : ""}>Costa de Marfil</option>
+        <option value="Croacia" ${savedTeam === "Croacia" ? "selected" : ""}>Croacia</option>
+        <option value="Curazao" ${savedTeam === "Curazao" ? "selected" : ""}>Curazao</option>
+        <option value="Ecuador" ${savedTeam === "Ecuador" ? "selected" : ""}>Ecuador</option>
+        <option value="Egipto" ${savedTeam === "Egipto" ? "selected" : ""}>Egipto</option>
+        <option value="Escocia" ${savedTeam === "Escocia" ? "selected" : ""}>Escocia</option>
+        <option value="España" ${savedTeam === "España" ? "selected" : ""}>España</option>
+        <option value="Estados Unidos" ${savedTeam === "Estados Unidos" ? "selected" : ""}>Estados Unidos</option>
+        <option value="Francia" ${savedTeam === "Francia" ? "selected" : ""}>Francia</option>
+        <option value="Alemania" ${savedTeam === "Alemania" ? "selected" : ""}>Alemania</option>
+        <option value="Ghana" ${savedTeam === "Ghana" ? "selected" : ""}>Ghana</option>
+        <option value="Haití" ${savedTeam === "Haití" ? "selected" : ""}>Haití</option>
+        <option value="Inglaterra" ${savedTeam === "Inglaterra" ? "selected" : ""}>Inglaterra</option>
+        <option value="Irak" ${savedTeam === "Irak" ? "selected" : ""}>Irak</option>
+        <option value="Irán" ${savedTeam === "Irán" ? "selected" : ""}>Irán</option>
+        <option value="Japón" ${savedTeam === "Japón" ? "selected" : ""}>Japón</option>
+        <option value="Jordania" ${savedTeam === "Jordania" ? "selected" : ""}>Jordania</option>
+        <option value="Marruecos" ${savedTeam === "Marruecos" ? "selected" : ""}>Marruecos</option>
+        <option value="México" ${savedTeam === "México" ? "selected" : ""}>México</option>
+        <option value="Noruega" ${savedTeam === "Noruega" ? "selected" : ""}>Noruega</option>
+        <option value="Nueva Zelanda" ${savedTeam === "Nueva Zelanda" ? "selected" : ""}>Nueva Zelanda</option>
+        <option value="Países Bajos" ${savedTeam === "Países Bajos" ? "selected" : ""}>Países Bajos</option>
+        <option value="Panamá" ${savedTeam === "Panamá" ? "selected" : ""}>Panamá</option>
+        <option value="Paraguay" ${savedTeam === "Paraguay" ? "selected" : ""}>Paraguay</option>
+        <option value="Portugal" ${savedTeam === "Portugal" ? "selected" : ""}>Portugal</option>
+        <option value="RD Congo" ${savedTeam === "RD Congo" ? "selected" : ""}>RD Congo</option>
+        <option value="República Checa" ${savedTeam === "República Checa" ? "selected" : ""}>República Checa</option>
+        <option value="Senegal" ${savedTeam === "Senegal" ? "selected" : ""}>Senegal</option>
+        <option value="Sudáfrica" ${savedTeam === "Sudáfrica" ? "selected" : ""}>Sudáfrica</option>
+        <option value="Suecia" ${savedTeam === "Suecia" ? "selected" : ""}>Suecia</option>
+        <option value="Suiza" ${savedTeam === "Suiza" ? "selected" : ""}>Suiza</option>
+        <option value="Túnez" ${savedTeam === "Túnez" ? "selected" : ""}>Túnez</option>
+        <option value="Turquía" ${savedTeam === "Turquía" ? "selected" : ""}>Turquía</option>
+        <option value="Uruguay" ${savedTeam === "Uruguay" ? "selected" : ""}>Uruguay</option>
+        <option value="Uzbekistán" ${savedTeam === "Uzbekistán" ? "selected" : ""}>Uzbekistán</option>
+        
+        </select>
+      
+      <button type="submit">Guardar Selección</button>
+    </form>
+  `;
+  openModal(favoriteHTML);
+
+  // Manejo del envío y guardado en LocalStorage
+  document.getElementById("favoriteForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    // Cambiamos 'teamInput' por 'teamSelect' para capturar la opción elegida
+    const team = document.getElementById("teamSelect").value;
+
+    if (team) {
+      localStorage.setItem("favoriteWorldCupTeam", team);
+      alert(`¡Guardaste con éxito a: ${team}!`);
+      closeModal();
+    }
+  });
+});
+
+
+
+// 4. Botón: Explicación de Cruces (Modal Interactivo Paso a Paso)
+document.getElementById("rulesBtn").addEventListener("click", () => {
+  const rulesHTML = `
+    <div class="modal-form">
+      <h3>Formato del Mundial 2026</h3>
+      
+      <div class="step-content active" data-step="1">
+        <h4 style="color: #facc15; margin: 0 0 8px 0;">1. Fase de Grupos</h4>
+        <p>Participan <strong>48 selecciones</strong> divididas en <strong>12 grupos</strong> de 4 equipos cada uno.</p>
+        <p>Clasifican automáticamente a la siguiente ronda los <strong>2 mejores</strong> de cada grupo (24 equipos en total).</p>
+      </div>
+
+      <div class="step-content" data-step="2">
+        <h4 style="color: #facc15; margin: 0 0 8px 0;">2. Los Mejores Terceros</h4>
+        <p>Para completar el cuadro de eliminación directa, se crea una tabla general con los 12 equipos que quedaron en 3° lugar.</p>
+        <p>¡Los <strong>8 mejores terceros</strong> se suman a la fiesta de la fase final!</p>
+      </div>
+
+      <div class="step-content" data-step="3">
+        <h4 style="color: #facc15; margin: 0 0 8px 0;">3. Dieciseisavos de Final</h4>
+        <p>Con los 24 clasificados directos + los 8 mejores terceros se arman los <strong>32 equipos (Ronda de 32)</strong>.</p>
+        <p>Los cruces se definen cruzando líderes de grupo contra los mejores terceros o segundos lugares siguiendo la llave oficial de la FIFA.</p>
+      </div>
+
+      <div class="steps-navigation">
+        <button type="button" class="nav-btn" id="prevStepBtn" style="visibility: hidden;">Anterior</button>
+        
+        <div class="step-dot-container">
+          <span class="dot active" data-dot="1"></span>
+          <span class="dot" data-dot="2"></span>
+          <span class="dot" data-dot="3"></span>
+        </div>
+        
+        <button type="button" class="nav-btn" id="nextStepBtn">Siguiente</button>
+      </div>
+    </div>
+  `;
+  
+  openModal(rulesHTML);
+
+  // Lógica interna para manejar las pestañas interactivas
+  let currentStep = 1;
+  const totalSteps = 3;
+
+  const updateSteps = () => {
+    // Alternar visibilidad de los textos
+    document.querySelectorAll(".step-content").forEach(step => {
+      step.classList.remove("active");
+      if (parseInt(step.dataset.step) === currentStep) step.classList.add("active");
+    });
+
+    // Alternar los puntitos indicadores
+    document.querySelectorAll(".dot").forEach(dot => {
+      dot.classList.remove("active");
+      if (parseInt(dot.dataset.dot) === currentStep) dot.classList.add("active");
+    });
+
+    // Controlar visibilidad de los botones de navegación
+    document.getElementById("prevStepBtn").style.visibility = currentStep === 1 ? "hidden" : "visible";
+    
+    const nextBtn = document.getElementById("nextStepBtn");
+    if (currentStep === totalSteps) {
+      nextBtn.innerText = "Entendido";
+      nextBtn.style.background = "#facc15";
+      nextBtn.style.color = "#0f172a";
+    } else {
+      nextBtn.innerText = "Siguiente";
+      nextBtn.style.background = "#334155";
+      nextBtn.style.color = "white";
+    }
+  };
+
+  // Evento Siguiente
+  document.getElementById("nextStepBtn").addEventListener("click", () => {
+    if (currentStep < totalSteps) {
+      currentStep++;
+      updateSteps();
+    } else {
+      closeModal(); // Cierra el modal en el último paso si le da a "Entendido"
+    }
+  });
+
+  // Evento Anterior
+  document.getElementById("prevStepBtn").addEventListener("click", () => {
+    if (currentStep > 1) {
+      currentStep--;
+      updateSteps();
+    }
+  });
+});
+
+
 groups.forEach(group => {
   group.teams.forEach(([name, flag]) => teamMap.set(name, { name, flag, group: group.id }));
 });
@@ -213,15 +565,15 @@ function renderTable(rows, bestThirdNames, isThirds = false) {
       </thead>
       <tbody>
         ${rows.map((row, index) => {
-          const team = getTeam(row.team);
-          const className = !isThirds && index < 2 ? "qualified" : bestThirdNames.has(row.team) ? "third-qualified" : "";
-          return `
+    const team = getTeam(row.team);
+    const className = !isThirds && index < 2 ? "qualified" : bestThirdNames.has(row.team) ? "third-qualified" : "";
+    return `
             <tr class="${className}">
               <td><span class="team-cell"><span class="flag">${team.flag}</span><span class="team-name">${row.team}</span></span></td>
               <td>${row.pts}</td><td>${row.pj}</td><td>${row.gf}</td><td>${row.gc}</td><td>${row.dg}</td>
             </tr>
           `;
-        }).join("")}
+  }).join("")}
       </tbody>
     </table>
   `;
@@ -375,16 +727,16 @@ function renderCalendar() {
         <div class="date-box"><span>${month}</span><strong>${day}</strong></div>
         <div class="calendar-games">
           ${dateMatches.map(match => {
-            const home = getTeam(match.home);
-            const away = getTeam(match.away);
-            return `
+      const home = getTeam(match.home);
+      const away = getTeam(match.away);
+      return `
               <div class="calendar-game">
                 <small>Grupo ${match.group}</small>
                 <div class="team-row"><span class="flag">${home.flag}</span>${home.name}</div>
                 <div class="team-row"><span class="flag">${away.flag}</span>${away.name}</div>
               </div>
             `;
-          }).join("")}
+    }).join("")}
         </div>
       </article>
     `;

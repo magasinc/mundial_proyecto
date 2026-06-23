@@ -11,7 +11,7 @@
 <body>
   <header class="site-header">
     <nav class="nav" aria-label="Menu principal">
-      <a class="brand" href="#inicio"><span class="brand-ball">26</span>Mundial 2026</a>
+      <a class="brand" href="#inicio"><span class="brand-ball">26</span>Mundial 2026</a> 
       <div class="menu">
         <a class="view-link" href="#grupos" data-view="grupos">Grupos</a>
         <a class="view-link" href="#simulador" data-view="simulador">Simulador</a>
@@ -40,7 +40,9 @@
             <li>1. Pasan los dos primeros de cada grupo.</li>
             <li>2. También pasan los ocho mejores terceros.</li>
             <li>3. Desde dieciseisavos eliges al ganador de cada cruce.</li>
-          </ul>
+          </ul><br>
+              <button type="button" id="rulesBtn" class="rules-btn">¿Cómo funcionan los cruces?</button>
+
         </div>
       </div>
     </section>
@@ -50,7 +52,7 @@
         <div class="section-title">
           <span>Fase de grupos</span>
           <h2>Todos los grupos</h2>
-          
+
         </div>
         <div id="groups-grid" class="groups-grid"></div>
       </div>
@@ -61,7 +63,8 @@
         <div class="section-title">
           <span>Predicciones</span>
           <h2>Simulador de grupos y cruces</h2>
-          <p>Llena los marcadores de grupos para calcular puntos, diferencia de gol y clasificados. Luego elige ganadores en el bracket.</p>
+          <p>Llena los marcadores de grupos para calcular puntos, diferencia de gol y clasificados. Luego elige
+            ganadores en el bracket.</p>
         </div>
 
         <div class="sim-layout">
@@ -110,18 +113,39 @@
         <div class="section-title">
           <span>Fixture</span>
           <h2>Calendario por fecha</h2>
-          
+
         </div>
         <div id="calendar" class="calendar"></div>
       </div>
     </section>
+
   </main>
 
   <footer class="footer">
     <div class="wrap">Mundial 2026 | Grupos, simulador y calendario.</div>
   </footer>
 
+  <div class="floating-menu" id="floatingMenu">
+    <button type="button" class="floating-option help" id="helpBtn">Ayuda</button>
+    <button type="button" class="floating-option comments" id="commentsBtn">Comentarios</button>
+    <button type="button" class="floating-option favorite" id="favoriteTeamBtn">Selección</button>
+    <button type="button" id="mainFloatingBtn" class="main-floating-btn">+</button>
+  </div>
+
+
+
+  <div class="custom-modal" id="customModal">
+    <div class="modal-content">
+      <button type="button" class="close-modal-btn" id="closeModalBtn">&times;</button>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
   <script src="script.js"></script>
+
+
+
 </body>
+
 
 </html>

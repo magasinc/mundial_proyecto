@@ -651,6 +651,290 @@ td:first-child {
   font-weight: 900;
 }
 
+/* ========================================================
+   1. CONTENEDOR DEL MENÚ FLOTANTE Y BOTÓN PRINCIPAL
+   ======================================================== */
+
+.floating-menu {
+  position: fixed !important;
+  right: 24px !important;
+  bottom: 24px !important;
+  z-index: 9999 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+}
+
+.main-floating-btn {
+  width: 56px !important;
+  height: 56px !important;
+  border: none !important;
+  border-radius: 50% !important;
+  background: #facc15 !important; /* Amarillo de tu simulador */
+  color: #111827 !important;
+  font-size: 32px !important;
+  font-weight: bold !important;
+  cursor: pointer !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+  transition: transform 0.25s ease, background 0.25s ease !important;
+  z-index: 10000 !important;
+}
+
+/* Animación del botón principal al abrirse (+) -> (X) */
+.floating-menu.is-open .main-floating-btn {
+  transform: rotate(45deg) !important;
+  background: #ef4444 !important; /* Cambia a rojo al abrir */
+  color: white !important;
+}
+
+/* ========================================================
+   2. BOTONES DE OPCIONES (Ayuda, Comentarios, Selección)
+   ======================================================== */
+
+.floating-option {
+  position: absolute !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 999px !important;
+  padding: 10px 18px !important;
+  background: #1e293b !important; /* Fondo oscuro integrado */
+  color: #f3f4f6 !important;
+  font-family: inherit !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(0) scale(0.85) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4) !important;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease !important;
+  z-index: 9998 !important;
+  white-space: nowrap !important;
+}
+
+.floating-option:hover {
+  background: #334155 !important;
+  color: #ffffff !important;
+}
+
+/* Mostrar opciones al abrir el menú */
+.floating-menu.is-open .floating-option {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Posiciones de despliegue vertical */
+.floating-menu.is-open .help {
+  transform: translateY(-70px) scale(1) !important;
+}
+
+.floating-menu.is-open .comments {
+  transform: translateY(-125px) scale(1) !important;
+}
+
+.floating-menu.is-open .favorite {
+  transform: translateY(-180px) scale(1) !important;
+}
+
+/* ========================================================
+   3. VENTANA MODAL (FONDO OSCURO Y CAJA FLOTANTE)
+   ======================================================== */
+
+.custom-modal {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(15, 23, 42, 0.85) !important;
+  backdrop-filter: blur(4px) !important;
+  z-index: 100000 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.3s ease !important;
+}
+
+.custom-modal.is-active {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.modal-content {
+  background: #1e293b !important;
+  padding: 30px !important;
+  border-radius: 16px !important;
+  width: 90% !important;
+  max-width: 400px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+  position: relative !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-sizing: border-box !important;
+}
+
+.close-modal-btn {
+  position: absolute !important;
+  top: 14px !important;
+  right: 18px !important;
+  background: none !important;
+  border: none !important;
+  font-size: 24px !important;
+  cursor: pointer !important;
+  color: #94a3b8 !important;
+  z-index: 100010 !important;
+}
+
+.close-modal-btn:hover {
+  color: #ffffff !important;
+}
+
+/* ========================================================
+   4. ESTILOS INTERNOS DE LOS FORMULARIOS
+   ======================================================== */
+
+.modal-form {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  text-align: left !important;
+}
+
+.modal-form h3 {
+  margin: 0 0 4px 0 !important;
+  color: #ffffff !important;
+  font-size: 20px !important;
+  font-family: inherit !important;
+}
+
+.modal-form label {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #94a3b8 !important;
+  margin-bottom: -6px !important;
+  font-family: inherit !important;
+}
+
+.modal-form input, 
+.modal-form textarea {
+  width: 100% !important;
+  padding: 12px !important;
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+  border-radius: 8px !important;
+  color: #ffffff !important;
+  font-family: inherit !important;
+  font-size: 15px !important;
+  box-sizing: border-box !important;
+}
+
+.modal-form input:focus, 
+.modal-form textarea:focus {
+  outline: none !important;
+  border-color: #facc15 !important;
+}
+
+.modal-form button[type="submit"] {
+  background: #facc15 !important;
+  color: #0f172a !important;
+  border: none !important;
+  padding: 12px !important;
+  border-radius: 8px !important;
+  font-weight: bold !important;
+  font-size: 16px !important;
+  cursor: pointer !important;
+  margin-top: 10px !important;
+  transition: background 0.2s !important;
+  width: 100% !important;
+}
+
+.modal-form button[type="submit"]:hover {
+  background: #eab308 !important;
+}
+
+/* --- BOTÓN DE REGLAS CON EFECTO HOVER --- */
+.rules-btn {
+  background: transparent !important;
+  color: #facc15 !important; /* Texto amarillo */
+  border: 2px solid #facc15 !important; /* Borde amarillo */
+  padding: 12px 20px !important;
+  border-radius: 8px !important;
+  font-weight: bold !important;
+  font-size: 15px !important;
+  cursor: pointer !important;
+  margin-left: 10px !important;
+  
+  /* Transición suave para el tamaño */
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s !important;
+}
+
+/* Al pasar el mouse encima, se agranda un 8% */
+.rules-btn:hover {
+  transform: scale(1.08) !important;
+  background: rgba(250, 204, 21, 0.1) !important; /* Destello amarillo de fondo */
+}
+
+/* --- ESTILOS PARA LOS PASOS INTERACTIVOS --- */
+.step-content {
+  display: none; /* Oculta todos los pasos por defecto */
+  color: #e2e8f0;
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 15px 0;
+}
+
+.step-content.active {
+  display: block; /* Solo muestra el paso activo */
+  animation: fadeIn 0.3s ease;
+}
+
+.steps-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.step-dot-container {
+  display: flex;
+  gap: 8px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  background: #475569;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.dot.active {
+  background: #facc15; /* Punto amarillo para el paso actual */
+}
+
+.nav-btn {
+  background: #334155;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.nav-btn:hover {
+  background: #475569;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .footer {
   background: #090e18;
   color: rgba(255, 255, 255, 0.72);
