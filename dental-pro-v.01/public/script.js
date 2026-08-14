@@ -836,10 +836,27 @@ function showHome() {
 }
 
 // ==========================================
-// --- FUNCIONALIDADES DE PETICIONES HTTP ---
+// --- CONFIGURACIÓN DE FIREBASE DATABASE ---
 // ==========================================
 
-// 1. PETICIÓN HTTP GET: Cargar noticias del Mundial
+const firebaseConfig = {
+  apiKey: "AIzaSyDMIIqTG1qNi_eO-l0RLNDj6iz2v05sakE",
+  authDomain: "landing-92a81.firebaseapp.com",
+  databaseURL: "https://landing-92a81-default-rtdb.firebaseio.com",
+  projectId: "landing-92a81",
+  storageBucket: "landing-92a81.firebasestorage.app",
+  messagingSenderId: "1053242486586",
+  appId: "1:1053242486586:web:e44eb1b95f12f1de6f6a03"
+};
+
+// Inicializar SDK de Firebase si está presente
+if (typeof firebase !== "undefined" && !firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+
+const FIREBASE_DB_URL = "https://landing-92a81-default-rtdb.firebaseio.com";
+
+// 1. PETICIÓN HTTP GET: Cargar noticias desde Firebase Realtime Database
 function fetchNewsGET() {
   const newsGrid = document.getElementById("news-grid");
   const newsStatusBadge = document.getElementById("news-status-badge");
@@ -848,22 +865,42 @@ function fetchNewsGET() {
   if (!newsGrid || !newsStatusBadge) return;
 
   newsStatusBadge.className = "badge-status loading";
-  newsStatusBadge.innerHTML = "⏳ Consultando API (HTTP GET)...";
+  newsStatusBadge.innerHTML = "⏳ Consultando Firebase DB (HTTP GET)...";
   if (fetchNewsBtn) fetchNewsBtn.disabled = true;
 
-  fetch("https://jsonplaceholder.typicode.com/posts?_limit=6")
+  // Consultar noticias en Firebase Realtime Database vía REST GET
+  fetch(`${FIREBASE_DB_URL}/noticias.json`)
     .then(response => {
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.json();
     })
     .then(data => {
+      // Si la base de datos está vacía, guardamos datos iniciales en Firebase
+      if (!data) {
+        const sampleNews = [
+          { tag: "ESTADIOS", title: "Sedes listas para la inauguración", body: "Los estadios de México, EE.UU. y Canadá completan inspecciones oficiales.", refId: 101 },
+          { tag: "BOLETAS", title: "Fase 2 de venta de entradas", body: "La FIFA anuncia el sorteo de la segunda fase de distribución de boletas.", refId: 102 },
+          { tag: "SELECCIONES", title: "Lista de convocados extendida", body: "Cada selección podrá registrar hasta 26 jugadores para el torneo.", refId: 103 },
+          { tag: "CALENDARIO", title: "Horarios confirmados de la fase de grupos", body: "Revisa la programación completa para todos los grupos en el simulador.", refId: 104 }
+        ];
+
+        return fetch(`${FIREBASE_DB_URL}/noticias.json`, {
+          method: "PUT",
+          body: JSON.stringify(sampleNews),
+          headers: { "Content-Type": "application/json" }
+        }).then(() => sampleNews);
+      }
+
+      return Array.isArray(data) ? data : Object.values(data);
+    })
+    .then(newsArray => {
       newsStatusBadge.className = "badge-status";
-      newsStatusBadge.innerHTML = "🟢 API En línea (HTTP 200 OK)";
+      newsStatusBadge.innerHTML = "🟢 Firebase DB En línea (HTTP 200 OK)";
 
       const worldCupTags = ["ESTADIOS", "BOLETAS", "FIFA NEWS", "SELECCIONES", "CALENDARIO", "PREPARATIVOS"];
 
-      newsGrid.innerHTML = data.map((item, index) => {
-        const tag = worldCupTags[index % worldCupTags.length];
+      newsGrid.innerHTML = newsArray.map((item, index) => {
+        const tag = item.tag || worldCupTags[index % worldCupTags.length];
         return `
           <article class="news-card">
             <div>
@@ -872,21 +909,23 @@ function fetchNewsGET() {
               <p>${item.body}</p>
             </div>
             <div class="news-card-footer">
-              <span>FIFA Official API</span>
-              <span>Ref ID #${item.id}</span>
+              <span>🔥 Firebase Database</span>
+              <span>Ref ID #${item.refId || index + 1}</span>
             </div>
           </article>
         `;
       }).join("");
     })
     .catch(error => {
-      console.error("Error en HTTP GET:", error);
+      console.error("Error en HTTP GET a Firebase:", error);
       newsStatusBadge.className = "badge-status error";
-      newsStatusBadge.innerHTML = "⚠️ Error al conectar con la API (Modo Offline)";
+      newsStatusBadge.innerHTML = "⚠️ Firebase DB: Reglas / Permiso Denegado";
       newsGrid.innerHTML = `
         <div style="grid-column: 1 / -1; padding: 24px; background: rgba(207,36,52,0.08); border-radius: 12px; text-align: center; color: var(--red);">
-          <strong>No se pudieron cargar las noticias vía HTTP GET.</strong>
-          <p style="margin-top: 8px; font-size: 0.9rem;">Verifica tu conexión a internet o intenta nuevamente.</p>
+          <strong>Error de permisos en Firebase Realtime Database.</strong>
+          <p style="margin-top: 8px; font-size: 0.9rem;">
+            Por favor asegúrate de haber actualizado las Reglas en la Consola de Firebase a <code>".read": true, ".write": true</code>.
+          </p>
         </div>
       `;
     })
@@ -901,7 +940,7 @@ if (fetchNewsBtn) {
   fetchNewsBtn.addEventListener("click", fetchNewsGET);
 }
 
-// 2. PETICIÓN HTTP POST: Formulario de contacto/suscripción
+// 2. PETICIÓN HTTP POST: Formulario de contacto guardado en Firebase Database
 const contactApiForm = document.getElementById("contact-api-form");
 if (contactApiForm) {
   contactApiForm.addEventListener("submit", (e) => {
@@ -916,41 +955,41 @@ if (contactApiForm) {
       favoriteTeam: document.getElementById("contact-team").value,
       topic: document.getElementById("contact-topic").value,
       message: document.getElementById("contact-message").value,
-      timestamp: new Date().toISOString()
+      createdAt: new Date().toISOString()
     };
 
     submitBtn.disabled = true;
-    submitBtn.innerText = "⏳ Enviando petición POST a la API...";
+    submitBtn.innerText = "⏳ Enviando datos a Firebase Database (POST)...";
     responseBox.style.display = "none";
 
-    fetch("https://jsonplaceholder.typicode.com/posts", {
+    fetch(`${FIREBASE_DB_URL}/mensajes.json`, {
       method: "POST",
       body: JSON.stringify(payload),
       headers: {
-        "Content-type": "application/json; charset=UTF-8"
+        "Content-Type": "application/json"
       }
     })
       .then(response => {
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return response.json();
       })
       .then(data => {
-        console.log("Respuesta HTTP POST recibida:", data);
+        console.log("Respuesta HTTP POST de Firebase:", data);
         responseBox.className = "response-box success";
         responseBox.innerHTML = `
-          <strong>✅ ¡Petición HTTP POST exitosa! (Código 201 Created)</strong><br>
-          Hola <strong>${data.name}</strong>, tu mensaje sobre la selección de <strong>${data.favoriteTeam}</strong> fue recibido por el servidor.<br>
-          <small>ID generado por la API: <code>#${data.id}</code> | Hora: ${new Date().toLocaleTimeString()}</small>
+          <strong>✅ ¡Guardado con éxito en Firebase Database! (HTTP 200/201)</strong><br>
+          Hola <strong>${payload.name}</strong>, tu mensaje sobre la selección de <strong>${payload.favoriteTeam}</strong> fue registrado en Firebase Realtime DB.<br>
+          <small>Firebase Key asignada: <code>${data.name}</code> | Hora: ${new Date().toLocaleTimeString()}</small>
         `;
         responseBox.style.display = "block";
         contactApiForm.reset();
       })
       .catch(error => {
-        console.error("Error en HTTP POST:", error);
+        console.error("Error en HTTP POST a Firebase:", error);
         responseBox.className = "response-box error";
         responseBox.innerHTML = `
-          <strong>❌ Error al procesar la petición HTTP POST.</strong><br>
-          Ocurrió un problema al enviar los datos al servidor. Inténtalo de nuevo.
+          <strong>❌ Error al enviar datos a Firebase Realtime Database.</strong><br>
+          Verifica que en tu consola de Firebase (<code>landing-92a81</code>) hayas cambiado las Reglas a <code>".write": true</code>.
         `;
         responseBox.style.display = "block";
       })
@@ -988,4 +1027,5 @@ renderBracket();
 renderCalendar();
 initView();
 fetchNewsGET();
+
 
