@@ -821,7 +821,7 @@ function showView(viewId) {
 
 function initView() {
   const initialView = window.location.hash.replace("#", "");
-  if (["grupos", "simulador", "calendario"].includes(initialView)) {
+  if (["grupos", "simulador", "calendario", "noticias", "contacto"].includes(initialView)) {
     showView(initialView);
     return;
   }
@@ -833,6 +833,132 @@ function showHome() {
   document.querySelector(".hero").classList.remove("is-hidden");
   document.querySelectorAll(".app-view").forEach(section => section.classList.remove("is-active"));
   document.querySelectorAll(".view-link").forEach(link => link.classList.remove("is-active"));
+}
+
+// ==========================================
+// --- FUNCIONALIDADES DE PETICIONES HTTP ---
+// ==========================================
+
+// 1. PETICIÓN HTTP GET: Cargar noticias del Mundial
+function fetchNewsGET() {
+  const newsGrid = document.getElementById("news-grid");
+  const newsStatusBadge = document.getElementById("news-status-badge");
+  const fetchNewsBtn = document.getElementById("fetch-news-btn");
+
+  if (!newsGrid || !newsStatusBadge) return;
+
+  newsStatusBadge.className = "badge-status loading";
+  newsStatusBadge.innerHTML = "⏳ Consultando API (HTTP GET)...";
+  if (fetchNewsBtn) fetchNewsBtn.disabled = true;
+
+  fetch("https://jsonplaceholder.typicode.com/posts?_limit=6")
+    .then(response => {
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      return response.json();
+    })
+    .then(data => {
+      newsStatusBadge.className = "badge-status";
+      newsStatusBadge.innerHTML = "🟢 API En línea (HTTP 200 OK)";
+
+      const worldCupTags = ["ESTADIOS", "BOLETAS", "FIFA NEWS", "SELECCIONES", "CALENDARIO", "PREPARATIVOS"];
+
+      newsGrid.innerHTML = data.map((item, index) => {
+        const tag = worldCupTags[index % worldCupTags.length];
+        return `
+          <article class="news-card">
+            <div>
+              <span class="news-card-tag">${tag}</span>
+              <h3>${item.title}</h3>
+              <p>${item.body}</p>
+            </div>
+            <div class="news-card-footer">
+              <span>FIFA Official API</span>
+              <span>Ref ID #${item.id}</span>
+            </div>
+          </article>
+        `;
+      }).join("");
+    })
+    .catch(error => {
+      console.error("Error en HTTP GET:", error);
+      newsStatusBadge.className = "badge-status error";
+      newsStatusBadge.innerHTML = "⚠️ Error al conectar con la API (Modo Offline)";
+      newsGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; padding: 24px; background: rgba(207,36,52,0.08); border-radius: 12px; text-align: center; color: var(--red);">
+          <strong>No se pudieron cargar las noticias vía HTTP GET.</strong>
+          <p style="margin-top: 8px; font-size: 0.9rem;">Verifica tu conexión a internet o intenta nuevamente.</p>
+        </div>
+      `;
+    })
+    .finally(() => {
+      if (fetchNewsBtn) fetchNewsBtn.disabled = false;
+    });
+}
+
+// Evento para recargar noticias manualmente vía GET
+const fetchNewsBtn = document.getElementById("fetch-news-btn");
+if (fetchNewsBtn) {
+  fetchNewsBtn.addEventListener("click", fetchNewsGET);
+}
+
+// 2. PETICIÓN HTTP POST: Formulario de contacto/suscripción
+const contactApiForm = document.getElementById("contact-api-form");
+if (contactApiForm) {
+  contactApiForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const submitBtn = document.getElementById("contact-submit-btn");
+    const responseBox = document.getElementById("post-response-box");
+
+    const payload = {
+      name: document.getElementById("contact-name").value,
+      email: document.getElementById("contact-email").value,
+      favoriteTeam: document.getElementById("contact-team").value,
+      topic: document.getElementById("contact-topic").value,
+      message: document.getElementById("contact-message").value,
+      timestamp: new Date().toISOString()
+    };
+
+    submitBtn.disabled = true;
+    submitBtn.innerText = "⏳ Enviando petición POST a la API...";
+    responseBox.style.display = "none";
+
+    fetch("https://jsonplaceholder.typicode.com/posts", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: {
+        "Content-type": "application/json; charset=UTF-8"
+      }
+    })
+      .then(response => {
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        return response.json();
+      })
+      .then(data => {
+        console.log("Respuesta HTTP POST recibida:", data);
+        responseBox.className = "response-box success";
+        responseBox.innerHTML = `
+          <strong>✅ ¡Petición HTTP POST exitosa! (Código 201 Created)</strong><br>
+          Hola <strong>${data.name}</strong>, tu mensaje sobre la selección de <strong>${data.favoriteTeam}</strong> fue recibido por el servidor.<br>
+          <small>ID generado por la API: <code>#${data.id}</code> | Hora: ${new Date().toLocaleTimeString()}</small>
+        `;
+        responseBox.style.display = "block";
+        contactApiForm.reset();
+      })
+      .catch(error => {
+        console.error("Error en HTTP POST:", error);
+        responseBox.className = "response-box error";
+        responseBox.innerHTML = `
+          <strong>❌ Error al procesar la petición HTTP POST.</strong><br>
+          Ocurrió un problema al enviar los datos al servidor. Inténtalo de nuevo.
+        `;
+        responseBox.style.display = "block";
+      })
+      .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "🚀 Enviar Petición (HTTP POST)";
+      });
+  });
 }
 
 document.querySelector("#random-fill").addEventListener("click", () => {
@@ -861,3 +987,5 @@ renderTables();
 renderBracket();
 renderCalendar();
 initView();
+fetchNewsGET();
+
